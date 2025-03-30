@@ -26,9 +26,9 @@ def obtener_usuarios():
     try:
         # Conexión a la base de datos ssdd_p02_bd
         conn = pymysql.connect(
-            host='localhost',
+            host='mysql',
             user='root',
-            password='',
+            password='root',
             database='ssdd_p02_bd',
             cursorclass=pymysql.cursors.DictCursor # Para obtener resultados como diccionarios: {'id': 1, 'nombre': 'Ignacio', 'email': 'ipf1006@alu.ubu.es'}
         )
