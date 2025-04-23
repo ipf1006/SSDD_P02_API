@@ -1,10 +1,14 @@
 import pymysql  # Para conectarse a una base de datos MySQL desde Python
 import requests  # Para hacer peticiones HTTP a APIs externas (como PokéAPI)
+import os #Para poder leer variables de entorno con os.environ.get()
 from flask import Flask, jsonify  # Flask para crear el microservicio, jsonify para devolver respuestas en formato JSON
 
 # Creamos una instancia de la aplicación Flask
 app = Flask(__name__)
 
+# Lee la variable
+def env(var):
+    return os.environ.get(var)
 
 # ---------------------------
 # Ruta para acceder a la base de datos MySQL y obtener usuarios
@@ -14,10 +18,10 @@ def obtener_usuarios():
     try:
         # Intentamos conectarnos a la base de datos
         conn = pymysql.connect(
-            host='mysql',
-            user='root',
-            password='root',
-            database='ssdd_p02_bd',
+            host=env('MYSQLDB_HOST'),
+            user=env('MYSQLDB_USER'),
+            password=env('MYSQLDB_PASS'),
+            database=env('MYSQLDB_NAME'),
             cursorclass=pymysql.cursors.DictCursor
         )
 
@@ -44,9 +48,9 @@ def conexion_fallida():
         # Intentamos conectarnos a la base de datos con parámetros erróneos
         conn = pymysql.connect(
             host='noExiste',  # Host incorrecto para simular fallo
-            user='root',
-            password='root',
-            database='ssdd_p02_bd'
+            user=env('MYSQLDB_USER'),
+            password=env('MYSQLDB_PASS'),
+            database=env('MYSQLDB_NAME')
         )
     except pymysql.MySQLError as e:
         return jsonify(error="Error al conectar con la base de datos", detalle=str(e)), 504
@@ -59,10 +63,10 @@ def tabla_inexistente():
     try:
         # Intentamos consultar una tabla que no existe
         conn = pymysql.connect(
-            host='mysql',
-            user='root',
-            password='root',
-            database='ssdd_p02_bd'
+            host=env('MYSQLDB_HOST'),
+            user=env('MYSQLDB_USER'),
+            password=env('MYSQLDB_PASS'),
+            database=env('MYSQLDB_NAME')
         )
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM tabla_no_existente")  # Esta tabla no existe
@@ -77,10 +81,10 @@ def valores_duplicados():
     try:
         # Intentamos insertar un valor duplicado en la base de datos
         conn = pymysql.connect(
-            host='mysql',
-            user='root',
-            password='root',
-            database='ssdd_p02_bd'
+            host=env('MYSQLDB_HOST'),
+            user=env('MYSQLDB_USER'),
+            password=env('MYSQLDB_PASS'),
+            database=env('MYSQLDB_NAME')
         )
         with conn.cursor() as cursor:
             cursor.execute("INSERT INTO usuarios (nombre, email) VALUES ('Ignacio', 'ipf1006@alu.ubu.es')")  # Duplicado
@@ -95,10 +99,10 @@ def valores_nulos():
     try:
         # Intentamos insertar valores nulos en una columna que no permite nulos
         conn = pymysql.connect(
-            host='mysql',
-            user='root',
-            password='root',
-            database='ssdd_p02_bd'
+            host=env('MYSQLDB_HOST'),
+            user=env('MYSQLDB_USER'),
+            password=env('MYSQLDB_PASS'),
+            database=env('MYSQLDB_NAME')
         )
         with conn.cursor() as cursor:
             cursor.execute("INSERT INTO usuarios (nombre, email) VALUES (null, null)")
@@ -168,4 +172,4 @@ def handle_generic_error(error):
 # Solo se ejecuta si el archivo se ejecuta directamente con "python app.py"
 if __name__ == '__main__':
     # Ejecutamos la app Flask en modo debug, escuchando en todas las interfaces (útil para Docker o red local)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=int(env('FLASK_PORT')))
