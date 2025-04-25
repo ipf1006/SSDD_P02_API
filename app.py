@@ -10,6 +10,8 @@ app = Flask(__name__)
 def env(var):
     return os.environ.get(var)
 
+RUTA_ARCHIVOS = './archivos'
+
 # ---------------------------
 # Ruta para acceder a la base de datos MySQL y obtener usuarios
 # ---------------------------
@@ -87,7 +89,7 @@ def valores_duplicados():
             database=env('MYSQLDB_NAME')
         )
         with conn.cursor() as cursor:
-            cursor.execute("INSERT INTO usuarios (nombre, email) VALUES ('Ignacio', 'ipf1006@alu.ubu.es')")  # Duplicado
+            cursor.execute("INSERT INTO usuarios (nombre, email, password, role) VALUES ('Ignacio', 'ipf1006@alu.ubu.es', 'admin123', 'ROLE_ADMIN')")  # Duplicado
             conn.commit()
             return jsonify(message="Usuarios insertados correctamente."), 201
     except pymysql.MySQLError as e:
@@ -105,7 +107,7 @@ def valores_nulos():
             database=env('MYSQLDB_NAME')
         )
         with conn.cursor() as cursor:
-            cursor.execute("INSERT INTO usuarios (nombre, email) VALUES (null, null)")
+            cursor.execute("INSERT INTO usuarios (nombre, email, password, role) VALUES (null, null, null, null)")
             conn.commit()
             return jsonify(message="Usuario insertado correctamente."), 201
     except pymysql.MySQLError as e:
@@ -162,12 +164,44 @@ def api_externa_solicitud_erronea():
         # Capturamos el error
         return jsonify(error="Fallo en API externa", detalle=str(e)), 400
 
+# ---------------------------------------
+# Gestión de lectura de archivos locales
+# ---------------------------------------
 
-# Manejar errores inesperados
-@app.errorhandler(Exception)
-def handle_generic_error(error):
-    return jsonify(error="Ha ocurrido un error inesperado"), 500
+def leer_archivo(nombre_archivo):
+    try:
+        # Ruta completa del archivo
+        ruta = os.path.join(RUTA_ARCHIVOS, nombre_archivo)
 
+        # Abrimos el archivo en modo lectura
+        with open(ruta, 'r') as f:
+            contenido = f.read()
+
+        # Devolvemos el contenido si se leyó correctamente
+        return jsonify(mensaje=f"{nombre_archivo}", contenido=contenido), 200
+
+    except FileNotFoundError:
+        # El archivo no existe
+        return jsonify(error=f"{nombre_archivo} no encontrado"), 404
+
+    except Exception as e:
+        # Otro tipo de error inesperado
+        return jsonify(error=f"Error al leer {nombre_archivo}", detalle=str(e)), 500
+
+# Lectura de un archivo correcto
+@app.route('/api/externa/archivo/correcto')
+def archivo_correcto():
+    return leer_archivo('archivo_correcto.txt')
+
+# Lectura un archivo que no existe
+@app.route('/api/externa/archivo/inexistente')
+def archivo_inexistente():
+    return leer_archivo('archivo_inexistente.txt')
+
+# Lectura de un archivo mal formateado
+@app.route('/api/externa/archivo/restringido')
+def archivo_restringido():
+    return leer_archivo('archivo_restringido.txt')
 
 # Solo se ejecuta si el archivo se ejecuta directamente con "python app.py"
 if __name__ == '__main__':
